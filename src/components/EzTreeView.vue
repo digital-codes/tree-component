@@ -20,6 +20,7 @@ const props = defineProps({
   controlsPosition: { type: String, default: 'top-right' },
   leafColor: { type: [Number, String], default: null },
   leafCount: { type: Number, default: null },
+  backgroundImage: { type: [String, Boolean, Object], default: null },
 });
 
 const emit = defineEmits(['generate', 'error']);
@@ -68,6 +69,7 @@ function initScene() {
     skybox: props.skybox,
     showGround: props.showGround,
     shadows: props.shadows,
+    backgroundImage: props.backgroundImage,
   });
   scene.add(environment);
 
@@ -133,6 +135,7 @@ function resize() {
 function animate() {
   const t = clock.getElapsedTime();
   if (tree) tree.update(t);
+  if (environment) environment.update(t, camera);
   controls.update();
   renderer.render(scene, camera);
   rafId = requestAnimationFrame(animate);
@@ -145,6 +148,7 @@ function updateEnvironment() {
     skybox: props.skybox,
     showGround: props.showGround,
     shadows: props.shadows,
+    backgroundImage: props.backgroundImage,
   });
 }
 
@@ -226,6 +230,7 @@ watch(() => props.leafCount, (value) => {
 watch(() => props.grassCount, updateEnvironment);
 watch(() => props.skybox, updateEnvironment);
 watch(() => props.showGround, updateEnvironment);
+watch(() => props.backgroundImage, updateEnvironment);
 watch(() => props.shadows, (value) => {
   if (renderer) renderer.shadowMap.enabled = value;
   updateEnvironment();

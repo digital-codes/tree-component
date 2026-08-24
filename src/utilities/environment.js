@@ -83,6 +83,62 @@ export class Skybox extends THREE.Mesh {
   }
 }
 
+
+// ===================== Background Image =====================
+
+export class BackgroundImage extends THREE.Mesh {
+  constructor(src, options = {}) {
+    const geometry = new THREE.PlaneGeometry(1, 1);
+    const material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: options.opacity ?? 1,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    });
+
+    super(geometry, material);
+    this.name = 'BackgroundImage';
+    this.renderOrder = -1000;
+    this.options = {
+      distance: options.distance ?? 950,
+      ...options,
+    };
+    this.visible = false;
+
+    const loader = new THREE.TextureLoader();
+    loader.load(src, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      this.material.map = texture;
+      this.material.needsUpdate = true;
+      this.userData.aspect = texture.image.width / texture.image.height;
+      this.visible = true;
+    }, undefined, (err) => {
+      console.warn('BackgroundImage failed to load', src, err);
+    });
+  }
+
+  update(camera) {
+    if (!this.visible || !this.userData.aspect) return;
+
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+
+    // Place the plane in front of the camera at a fixed distance, facing it
+    this.position.copy(camera.position).add(dir.multiplyScalar(this.options.distance));
+    this.lookAt(camera.position);
+
+    const dist = this.position.distanceTo(camera.position);
+    const vFOV = THREE.MathUtils.degToRad(camera.fov);
+    const height = 2 * dist * Math.tan(vFOV / 2);
+    const width = height * this.userData.aspect;
+
+    this.scale.set(width, height, 1);
+  }
+}
+
 // ===================== Ground =====================
 
 let groundAssetsLoaded = false;
@@ -334,6 +390,8 @@ export class Environment extends THREE.Object3D {
     this.ground = new Ground(config);
     this.grass = new Grass(config);
 
+    // Default: procedural skybox sphere is visible. Background image, if
+    // provided, replaces it but keeps the sun and ambient lights.
     if (config.skybox !== false) {
       this.add(this.skybox);
       this.add(this.skybox.sun);
@@ -341,9 +399,42 @@ export class Environment extends THREE.Object3D {
     }
     if (config.showGround !== false) this.add(this.ground);
     if (config.grassCount !== 0) this.add(this.grass);
+
+    this.setBackgroundImage(config.backgroundImage);
+  }
+
+  setBackgroundImage(src) {
+    const hadImage = !!this.backgroundImage;
+
+    // Remove old image if present
+    if (this.backgroundImage) {
+      this.remove(this.backgroundImage);
+      this.backgroundImage.geometry.dispose();
+      this.backgroundImage.material.dispose();
+      if (this.backgroundImage.material.map) this.backgroundImage.material.map.dispose();
+      this.backgroundImage = null;
+    }
+
+    if (src) {
+      this.backgroundImage = new BackgroundImage(src);
+      this.add(this.backgroundImage);
+    }
+
+    // Show procedural skybox only when no background image is active
+    this.skybox.visible = !this.backgroundImage;
+
+    // If we added an image but sun/ambient were never added, add them now
+    if (this.backgroundImage && !this.children.includes(this.skybox.sun)) {
+      this.add(this.skybox.sun);
+      this.add(this.skybox.ambient);
+    }
   }
 
   updateConfig(config) {
+    if (config.backgroundImage !== undefined) {
+      this.setBackgroundImage(config.backgroundImage);
+    }
+
     if (config.grassCount !== undefined) {
       this.grass.instanceCount = config.grassCount;
     }
@@ -374,5 +465,9 @@ export class Environment extends THREE.Object3D {
         this.skybox.updateSkyFromUniforms();
       }
     }
+  }
+
+  update(time, camera) {
+    if (this.backgroundImage) this.backgroundImage.update(camera);
   }
 }

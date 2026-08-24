@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { TreePreset } from '@dgreenheck/ez-tree';
 import EzTreeView from './components/EzTreeView.vue';
+import checkerboardImage from './assets/textures/background/checkerboard.jpg';
 
 const options = ref({
   seed: 1234,
@@ -13,6 +14,7 @@ const options = ref({
 const leafColor = ref(0x6e8c3e);
 const leafCount = ref(50);
 const selectedPreset = ref('Oak Medium');
+const showBackground = ref(false);
 const stats = ref(null);
 
 function onPresetChange(name) {
@@ -52,6 +54,7 @@ function randomizeSeed() {
       :options="options"
       :leaf-color="leafColor"
       :leaf-count="leafCount"
+      :background-image="showBackground ? checkerboardImage : null"
       :grass-count="2000"
       :show-ground="true"
       :shadows="true"
@@ -83,6 +86,10 @@ function randomizeSeed() {
           @input="onLeafCountChange(Number($event.target.value))"
         />
         <span>{{ leafCount }}</span>
+      </label>
+      <label>
+        Background
+        <input type="checkbox" v-model="showBackground" />
       </label>
     </div>
     <div v-if="stats" class="stats">
