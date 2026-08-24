@@ -558,20 +558,27 @@ export class Environment extends THREE.Object3D {
       this.ground.visible = config.showGround;
     }
     if (config.skybox !== undefined) {
-      // When a background image is active, keep the skybox sphere off the stage
-      // so it cannot mask the image. Sun/ambient stay on for lighting.
-      const skyOn = config.skybox !== false && !this.backgroundImage;
-      if (this.skybox.visible !== skyOn || this.skybox.sun.visible !== skyOn || this.skybox.ambient.visible !== skyOn) {
-        this.skybox.visible = skyOn;
-        this.skybox.sun.visible = skyOn;
-        this.skybox.ambient.visible = skyOn;
+      // Sphere is shown only when skybox is enabled and no background image is active.
+      const sphereOn = config.skybox !== false && !this.backgroundImage;
+      // Lights follow the user's skybox toggle, but they stay on when a background
+      // image replaces the procedural sphere so the scene remains lit.
+      const lightsOn = config.skybox !== false;
+      if (this.skybox.visible !== sphereOn) {
+        this.skybox.visible = sphereOn;
       }
-      // Make sure the sphere is added/removed consistently with the image state.
-      if (!skyOn && this.children.includes(this.skybox)) {
+      if (this.skybox.sun.visible !== lightsOn || this.skybox.ambient.visible !== lightsOn) {
+        this.skybox.sun.visible = lightsOn;
+        this.skybox.ambient.visible = lightsOn;
+      }
+      // Add/remove the sphere mesh based on the image/skybox state.
+      if (!sphereOn && this.children.includes(this.skybox)) {
         this.remove(this.skybox);
-      } else if (skyOn && !this.children.includes(this.skybox)) {
+      } else if (sphereOn && !this.children.includes(this.skybox)) {
         this.add(this.skybox);
       }
+      // Ensure lights are still attached when a background image uses them.
+      if (!this.children.includes(this.skybox.sun)) this.add(this.skybox.sun);
+      if (!this.children.includes(this.skybox.ambient)) this.add(this.skybox.ambient);
       if (typeof config.skybox === 'object') {
         const u = this.skybox.material.uniforms;
         if (config.skybox.sunAzimuth !== undefined) u.uSunAzimuth.value = config.skybox.sunAzimuth;
