@@ -6,15 +6,38 @@ import checkerboardImage from './assets/textures/background/checkerboard.jpg';
 
 
 // tree.options.bark.type
+// need to control in branch => growth direction: strength, angle: level 1 (no 0), length: level 0 and 1, radius: level 0
+
+
+const healthOption = ref(1)
+
+const branchVariants = [
+  { length: { 0: 10, 1: 5 }, radius: { 0: 1. }, angle: { 1: 120.0 }, force: {strength: .001} },
+  { length: { 0: 20, 1: 15 }, radius: { 0: 2.0 }, angle: { 1: 100.0 }, force: {strength: .001} },
+  { length: { 0: 30, 1: 20 }, radius: { 0: 3.0 }, angle: { 1: 80.0 }, force: {strength: .002} },
+  { length: { 0: 35, 1: 25 }, radius: { 0: 3.5 }, angle: { 1: 60.0 }, force: {strength: .003} },
+  { length: { 0: 35, 1: 25 }, radius: { 0: 4.0 }, angle: { 1: 50.0 }, force: {strength: .005} },
+];
+
+const leaveVariants = [
+  { count: 1, color: 0x865e3c },
+  { count: 5, color: 0xf5c211 },
+  { count: 15, color: 0x6e8c3e },
+  { count: 30, color: 0x6e8c3e },
+  { count: 40, color: 0x6e8c3e }
+];
+
 const options = ref({
   seed: 1234,
   type: 'deciduous',
-  branch: { levels: 3 },
-  leaves: { type: 'oak', tint: 0x6e8c3e },
+  branch: branchVariants[healthOption.value],
+  leaves: { type: 'oak', tint: leaveVariants[healthOption.value].color },
 });
 
-const leafColor = ref(0x6e8c3e);
-const leafCount = ref(50);
+
+
+const leafColor = ref(leaveVariants[healthOption.value].color);
+const leafCount = ref(leaveVariants[healthOption.value].count);
 const selectedPreset = ref('Ash Medium');
 const showBackground = ref(false);
 const backgroundOrientation = ref('camera');

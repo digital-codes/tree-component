@@ -92,7 +92,9 @@ async function setupTree() {
   }
 
   const internalOptions = tree.options;
+  console.log('EzTreeView setupTree internalOptions:', internalOptions);
   internalOptions.copy(props.options, internalOptions);
+  console.log('EzTreeView setupTree updated internalOptions:', internalOptions);
 
   const leafColorHex = normalizeColor(props.leafColor);
   if (leafColorHex !== null) {
