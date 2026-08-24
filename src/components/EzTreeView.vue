@@ -19,7 +19,7 @@ const props = defineProps({
   showControls: { type: Boolean, default: true },
   controlsPosition: { type: String, default: 'top-right' },
   leafColor: { type: [Number, String], default: null },
-  leafDensity: { type: Number, default: 1 },
+  leafCount: { type: Number, default: null },
 });
 
 const emit = defineEmits(['generate', 'error']);
@@ -95,16 +95,14 @@ async function setupTree() {
     internalOptions.leaves.tint = leafColorHex;
   }
 
+  if (props.leafCount !== null && props.leafCount !== undefined) {
+    tree.options.leaves.count = props.leafCount;
+  }
+
   applyTreeTextures(tree);
 
   if (props.autoGenerate) {
     generate();
-  }
-
-  const initialDensity = props.leafDensity !== null && props.leafDensity !== undefined ? Math.max(0, Math.min(3, Number(props.leafDensity))) : 1;
-  if (initialDensity !== 1) {
-    tree.regenerateLeaves(initialDensity);
-    console.log('EzTreeView initial density applied:', initialDensity);
   }
 }
 
@@ -188,45 +186,23 @@ watch(() => props.preset, (name) => {
     loadPresetWithTextures(tree, name, false);
     const leafColorHex = normalizeColor(props.leafColor);
     if (leafColorHex !== null) tree.options.leaves.tint = leafColorHex;
+    if (props.leafCount !== null && props.leafCount !== undefined) {
+      tree.options.leaves.count = props.leafCount;
+    }
     generate();
   }
 });
 
-watch(() => props.options, (newOptions, oldOptions) => {
+watch(() => props.options, (newOptions) => {
   if (!tree) return;
-
-  const leafOnlyKeys = ['count', 'size', 'sizeVariance', 'start', 'angle', 'billboard', 'type', 'tint', 'alphaTest', 'roundedNormals'];
-  const changedKeys = [];
-  if (oldOptions) {
-    for (const key of leafOnlyKeys) {
-      if (JSON.stringify(newOptions.leaves?.[key]) !== JSON.stringify(oldOptions.leaves?.[key])) {
-        changedKeys.push(key);
-      }
-    }
-  }
-
-  const branchKeysChanged = [];
-  if (oldOptions) {
-    for (const topKey of Object.keys(newOptions)) {
-      if (topKey === 'leaves') continue;
-      if (JSON.stringify(newOptions[topKey]) !== JSON.stringify(oldOptions[topKey])) {
-        branchKeysChanged.push(topKey);
-      }
-    }
-  }
-
   tree.options.copy(newOptions, tree.options);
   const leafColorHex = normalizeColor(props.leafColor);
   if (leafColorHex !== null) tree.options.leaves.tint = leafColorHex;
-  applyTreeTextures(tree);
-
-  if (!props.autoGenerate) return;
-
-  if (branchKeysChanged.length === 0 && changedKeys.length > 0) {
-    tree.regenerateLeaves();
-  } else {
-    generate();
+  if (props.leafCount !== null && props.leafCount !== undefined) {
+    tree.options.leaves.count = props.leafCount;
   }
+  applyTreeTextures(tree);
+  if (props.autoGenerate) generate();
 }, { deep: true });
 
 watch(() => props.leafColor, (value) => {
@@ -235,17 +211,16 @@ watch(() => props.leafColor, (value) => {
   if (hex !== null) {
     tree.options.leaves.tint = hex;
     applyTreeTextures(tree);
-    if (props.autoGenerate) tree.regenerateLeaves();
+    if (props.autoGenerate) generate();
   }
 });
 
-watch(() => props.leafDensity, (value) => {
-  console.log('EzTreeView leafDensity prop changed:', value);
+watch(() => props.leafCount, (value) => {
+  console.log('EzTreeView leafCount prop changed:', value);
   if (!tree || value === null || value === undefined) return;
-  const density = Math.max(0, Math.min(3, Number(value)));
-  console.log('EzTreeView applying density:', density);
+  tree.options.leaves.count = value;
   applyTreeTextures(tree);
-  if (props.autoGenerate) tree.regenerateLeaves(density);
+  if (props.autoGenerate) generate();
 });
 
 watch(() => props.grassCount, updateEnvironment);

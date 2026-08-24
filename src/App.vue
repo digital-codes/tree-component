@@ -11,7 +11,7 @@ const options = ref({
 });
 
 const leafColor = ref(0x6e8c3e);
-const leafDensity = ref(1.0);
+const leafCount = ref(50);
 const selectedPreset = ref('Oak Medium');
 const stats = ref(null);
 
@@ -29,9 +29,9 @@ function onLeafColorChange(color) {
   console.log('leaf color changed:', color.toString(16));
 }
 
-function onLeafDensityChange(value) {
-  leafDensity.value = value;
-  console.log('leaf density changed:', value);
+function onLeafCountChange(value) {
+  leafCount.value = Math.round(value);
+  console.log('leaf count changed:', leafCount.value);
 }
 
 function hexString(hex) {
@@ -51,7 +51,7 @@ function randomizeSeed() {
       :preset="selectedPreset"
       :options="options"
       :leaf-color="leafColor"
-      :leaf-density="leafDensity"
+      :leaf-count="leafCount"
       :grass-count="2000"
       :show-ground="true"
       :shadows="true"
@@ -73,16 +73,16 @@ function randomizeSeed() {
         />
       </label>
       <label>
-        Leaf density
+        Leaf count
         <input
           type="range"
           min="0"
-          max="3"
-          step="0.1"
-          :value="leafDensity"
-          @input="onLeafDensityChange(Number($event.target.value))"
+          max="100"
+          step="1"
+          :value="leafCount"
+          @input="onLeafCountChange(Number($event.target.value))"
         />
-        <span>{{ leafDensity.toFixed(1) }}</span>
+        <span>{{ leafCount }}</span>
       </label>
     </div>
     <div v-if="stats" class="stats">
