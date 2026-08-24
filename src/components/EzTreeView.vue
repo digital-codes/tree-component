@@ -19,6 +19,7 @@ const props = defineProps({
   showControls: { type: Boolean, default: true },
   controlsPosition: { type: String, default: 'top-right' },
   leafColor: { type: [Number, String], default: null },
+  leafDensity: { type: Number, default: 1 },
 });
 
 const emit = defineEmits(['generate', 'error']);
@@ -26,6 +27,7 @@ const emit = defineEmits(['generate', 'error']);
 const canvasContainer = ref(null);
 let renderer, scene, camera, controls, tree, environment, clock, rafId;
 let isReady = false;
+const leafDensity = ref(1.0);
 
 function normalizeColor(value) {
   if (value === null || value === undefined) return null;
@@ -96,9 +98,20 @@ async function setupTree() {
 
   applyTreeTextures(tree);
 
+  if (props.leafDensity !== null && props.leafDensity !== undefined) {
+    leafDensity.value = Number(props.leafDensity);
+  }
+
   if (props.autoGenerate) {
     generate();
   }
+}
+
+function setLeafDensity(value) {
+  if (!tree) return;
+  leafDensity.value = Math.max(0, Math.min(3, Number(value)));
+  applyTreeTextures(tree);
+  if (props.autoGenerate) tree.regenerateLeaves(leafDensity.value);
 }
 
 function generate() {
@@ -232,6 +245,13 @@ watch(() => props.leafColor, (value) => {
   }
 });
 
+watch(() => props.leafDensity, (value) => {
+  if (!tree || value === null || value === undefined) return;
+  leafDensity.value = Math.max(0, Math.min(3, Number(value)));
+  applyTreeTextures(tree);
+  if (props.autoGenerate) tree.regenerateLeaves(leafDensity.value);
+});
+
 watch(() => props.grassCount, updateEnvironment);
 watch(() => props.skybox, updateEnvironment);
 watch(() => props.showGround, updateEnvironment);
@@ -281,6 +301,18 @@ defineExpose({ generate, getTree: () => tree });
         <option v-for="key in Object.keys(TreePreset)" :key="key" :value="key">{{ key }}</option>
       </select>
       <button @click="randomizeSeed">Randomize Seed</button>
+      <label class="slider-label">
+        Leaf density
+        <input
+          type="range"
+          min="0"
+          max="3"
+          step="0.1"
+          :value="leafDensity"
+          @input="setLeafDensity($event.target.value)"
+        />
+        <span>{{ leafDensity.toFixed(1) }}</span>
+      </label>
       <label class="color-label">
         Leaf color
         <input
@@ -344,5 +376,24 @@ select, button {
   border: none;
   padding: 0;
   cursor: pointer;
+}
+
+.slider-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  color: #fff;
+  min-width: 180px;
+}
+
+.slider-label input[type="range"] {
+  flex: 1;
+}
+
+.slider-label span {
+  min-width: 44px;
+  text-align: right;
 }
 </style>

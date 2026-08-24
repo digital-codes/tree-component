@@ -137,6 +137,30 @@ export class Tree extends THREE.Group {
   }
 
   /**
+   * Regenerates only the leaf skeleton and geometry, leaving branch
+   * positions and all growth parameters unchanged. Useful to change leaf
+   * density/count for the same tree shape.
+   * @param {number} [density=1] Leaf density multiplier between 0 and 1.
+   *   1 shows all generated leaves; lower values skip leaves in a stable
+   *   order so the canopy thins without changing individual leaf positions.
+   */
+  regenerateLeaves(density = 1) {
+    if (!this.skeleton) {
+      this.generate();
+      return;
+    }
+
+    this.#generateLeafSkeleton();
+
+    const leafStride = density <= 0 ? Number.MAX_SAFE_INTEGER : Math.max(1, Math.round(1 / density));
+    const buffers = this.#meshSkeleton({ leafStride });
+    this.branches = buffers.branches;
+    this.leaves = buffers.leaves;
+
+    this.createLeavesGeometry();
+  }
+
+  /**
    * Generates the tree as a set of levels of detail hosted in a THREE.LOD
    * object inside this group. The renderer switches levels automatically
    * based on camera distance. All levels share one bark and one leaf
@@ -251,8 +275,44 @@ export class Tree extends THREE.Group {
     };
 
     this.rng = new RNG(this.options.seed);
+    this.#growBranches();
+  }
 
-    // Create the trunk of the tree first
+  /**
+   * Regenerates only the leaf placements from the existing branch skeleton.
+   * Reuses the same RNG with the same seed so the placement is deterministic
+   * and identical to a full generate() for the same options.
+   */
+  #generateLeafSkeleton() {
+    if (!this.skeleton) return;
+    this.skeleton.leaves = [];
+
+    // Reset RNG so leaf randomness follows the exact same sequence as a
+    // full generate() would. Branch growth must re-consume its randomness
+    // in the same order before we reach leaf generation.
+    this.rng = new RNG(this.options.seed);
+
+    // Re-grow branches to consume RNG exactly in the original order. We
+    // throw away the new branch data because the stored skeleton is kept.
+    const savedBranches = this.skeleton.branches;
+    const tempSkeleton = { branches: [], leaves: [] };
+    this.skeleton = tempSkeleton;
+    this.#growBranches();
+
+    // Restore the branch skeleton. The temporary skeleton already received
+    // the new leaves because #growBranch populates it via #recordLeaf and
+    // generateLeaves.
+    this.skeleton = {
+      branches: savedBranches,
+      leaves: tempSkeleton.leaves,
+    };
+  }
+
+  /**
+   * Grows every branch from the trunk.
+   */
+  #growBranches() {
+    this.branchQueue = [];
     this.branchQueue.push(
       new Branch(
         new THREE.Vector3(),
