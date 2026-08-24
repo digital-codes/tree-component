@@ -25,18 +25,18 @@
     "preview": "vite preview --config vite.app.config.js"
   },
   "dependencies": {
-    "three": "^0.167.0"
+    "three": "^0.185.1"
   },
   "peerDependencies": {
-    "vue": "^3.4.0"
+    "vue": "^3.5.41"
   },
   "devDependencies": {
     "@types/three": "^0.169.0",
-    "@vitejs/plugin-vue": "^5.0.5",
+    "@vitejs/plugin-vue": "^6.0.8",
     "prettier": "3.3.3",
-    "typescript": "^5.5.4",
-    "vite": "^5.0.0",
-    "vite-plugin-dts": "^3.9.1",
-    "vue": "^3.4.0"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vite-plugin-dts": "^5.0.3",
+    "vue": "^3.5.41"
   }
 }
