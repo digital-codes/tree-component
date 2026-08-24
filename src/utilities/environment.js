@@ -90,8 +90,6 @@ export class BackgroundImage extends THREE.Mesh {
   constructor(src, options = {}) {
     const geometry = new THREE.PlaneGeometry(1, 1);
     const material = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: options.opacity ?? 1,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
@@ -102,6 +100,7 @@ export class BackgroundImage extends THREE.Mesh {
     this.renderOrder = -1000;
     this.options = {
       distance: options.distance ?? 950,
+      opacity: options.opacity ?? 1,
       ...options,
     };
     this.visible = false;
@@ -112,6 +111,7 @@ export class BackgroundImage extends THREE.Mesh {
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
       this.material.map = texture;
+      this.material.opacity = this.options.opacity;
       this.material.needsUpdate = true;
       this.userData.aspect = texture.image.width / texture.image.height;
       this.visible = true;
@@ -126,9 +126,18 @@ export class BackgroundImage extends THREE.Mesh {
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
 
-    // Place the plane in front of the camera at a fixed distance, facing it
-    this.position.copy(camera.position).add(dir.multiplyScalar(this.options.distance));
-    this.lookAt(camera.position);
+    // Place the plane far ahead of the camera, on the opposite side of the
+    // tree. Because the material writes depth, closer objects (tree, ground)
+    // will correctly occlude it.
+    this.position.copy(camera.position).add(dir.clone().multiplyScalar(this.options.distance));
+
+    // Keep the image plane parallel to the camera's image sensor so the
+    // backdrop orientation matches the viewport rather than spinning around
+    // a world axis. Apply a 180° Y rotation so the plane faces the camera
+    // (camera looks down its local -Z; the plane's +Z should point forward).
+    this.quaternion.copy(camera.quaternion).multiply(
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)
+    );
 
     const dist = this.position.distanceTo(camera.position);
     const vFOV = THREE.MathUtils.degToRad(camera.fov);
