@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { TreePreset } from '@dgreenheck/ez-tree';
 
-import BarkColor from '../assets/textures/bark/Bark001_1K-JPG_Color.jpg';
-import BarkNormal from '../assets/textures/bark/Bark001_1K-JPG_NormalGL.jpg';
-import BarkRoughness from '../assets/textures/bark/Bark001_1K-JPG_Roughness.jpg';
+import BarkColor from '../assets/textures/bark/Bark006_1K-JPG_Color.jpg';
+import BarkNormal from '../assets/textures/bark/Bark006_1K-JPG_NormalGL.jpg';
+import BarkRoughness from '../assets/textures/bark/Bark006_1K-JPG_Roughness.jpg';
 
 import AshLeaf from '../assets/textures/leaves/ash.png';
 import AspenLeaf from '../assets/textures/leaves/aspen.png';

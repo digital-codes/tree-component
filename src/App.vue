@@ -4,6 +4,8 @@ import { TreePreset } from '@dgreenheck/ez-tree';
 import EzTreeView from './components/EzTreeView.vue';
 import checkerboardImage from './assets/textures/background/checkerboard.jpg';
 
+
+// tree.options.bark.type
 const options = ref({
   seed: 1234,
   type: 'deciduous',
@@ -13,7 +15,7 @@ const options = ref({
 
 const leafColor = ref(0x6e8c3e);
 const leafCount = ref(50);
-const selectedPreset = ref('Oak Medium');
+const selectedPreset = ref('Ash Medium');
 const showBackground = ref(false);
 const backgroundOrientation = ref('camera');
 const orientations = ['camera', 'xy', 'xz', 'yz', 'equirectangular'];
@@ -25,6 +27,7 @@ function onPresetChange(name) {
 }
 
 function onSeedChange(seed) {
+  options.value.seed = seed;
   console.log('seed changed:', seed);
 }
 
