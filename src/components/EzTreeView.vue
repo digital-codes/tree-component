@@ -21,6 +21,8 @@ const props = defineProps({
   leafColor: { type: [Number, String], default: null },
   leafCount: { type: Number, default: null },
   backgroundImage: { type: [String, Boolean, Object], default: null },
+  // Accepts a URL string or { src: string, orientation: 'camera' | 'xy' | 'xz' | 'yz' | 'equirectangular', distance?: number, opacity?: number }.
+  // Default orientation is 'camera' (billboard facing the camera).
 });
 
 const emit = defineEmits(['generate', 'error']);

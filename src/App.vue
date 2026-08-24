@@ -15,6 +15,8 @@ const leafColor = ref(0x6e8c3e);
 const leafCount = ref(50);
 const selectedPreset = ref('Oak Medium');
 const showBackground = ref(false);
+const backgroundOrientation = ref('camera');
+const orientations = ['camera', 'xy', 'xz', 'yz', 'equirectangular'];
 const stats = ref(null);
 
 function onPresetChange(name) {
@@ -54,7 +56,7 @@ function randomizeSeed() {
       :options="options"
       :leaf-color="leafColor"
       :leaf-count="leafCount"
-      :background-image="showBackground ? checkerboardImage : null"
+      :background-image="showBackground ? { src: checkerboardImage, orientation: backgroundOrientation } : null"
       :grass-count="2000"
       :show-ground="true"
       :shadows="true"
@@ -90,6 +92,12 @@ function randomizeSeed() {
       <label>
         Background
         <input type="checkbox" v-model="showBackground" />
+      </label>
+      <label>
+        Orientation
+        <select v-model="backgroundOrientation">
+          <option v-for="o in orientations" :key="o" :value="o">{{ o }}</option>
+        </select>
       </label>
     </div>
     <div v-if="stats" class="stats">

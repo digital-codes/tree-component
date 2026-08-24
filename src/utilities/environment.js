@@ -93,14 +93,25 @@ export class BackgroundImage extends THREE.Mesh {
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      transparent: true,
+      fog: false,
     });
 
     super(geometry, material);
     this.name = 'BackgroundImage';
     this.renderOrder = -1000;
+
+    // orientation: how the exported image is mapped onto the 3D scene.
+    //   'camera'  - billboard always facing the camera (legacy/default)
+    //   'xy'      - upright vertical plane in world XY (image X -> world X, image Y -> world Y)
+    //   'xz'      - horizontal ground plane in world XZ (image X -> world X, image Y -> world -Z)
+    //   'yz'      - vertical plane facing ±X (image X -> world Z, image Y -> world Y)
+    //   'equirectangular' - mapped onto a large BackSide sphere (no camera tracking)
+    const orientation = options.orientation ?? 'camera';
     this.options = {
       distance: options.distance ?? 950,
       opacity: options.opacity ?? 1,
+      orientation,
       ...options,
     };
     this.visible = false;
@@ -110,11 +121,24 @@ export class BackgroundImage extends THREE.Mesh {
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
       this.material.map = texture;
       this.material.opacity = this.options.opacity;
       this.material.needsUpdate = true;
       this.userData.aspect = texture.image.width / texture.image.height;
       this.visible = true;
+
+      if (this.options.orientation === 'equirectangular') {
+        this.geometry.dispose();
+        this.geometry = new THREE.SphereGeometry(this.options.distance, 64, 64);
+        this.material.side = THREE.BackSide;
+        this.material.depthTest = false;
+        this.renderOrder = -2000;
+        this.position.set(0, 0, 0);
+        this.scale.set(-1, 1, 1);
+        this.rotation.set(0, -Math.PI / 2, 0);
+      }
     }, undefined, (err) => {
       console.warn('BackgroundImage failed to load', src, err);
     });
@@ -122,6 +146,19 @@ export class BackgroundImage extends THREE.Mesh {
 
   update(camera) {
     if (!this.visible || !this.userData.aspect) return;
+
+    if (this.options.orientation === 'equirectangular') return;
+
+    if (this.options.orientation === 'xy' || this.options.orientation === 'xz' || this.options.orientation === 'yz') {
+      this._updateWorldAxis(camera);
+      return;
+    }
+
+    this._updateCamera(camera);
+  }
+
+  _updateCamera(camera) {
+    if (!this.userData.aspect) return;
 
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
@@ -145,6 +182,48 @@ export class BackgroundImage extends THREE.Mesh {
     const width = height * this.userData.aspect;
 
     this.scale.set(width, height, 1);
+  }
+
+  _updateWorldAxis(camera) {
+    const aspect = this.userData.aspect;
+    const mode = this.options.orientation;
+
+    let baseWidth = 0;
+    let baseHeight = 0;
+
+    if (mode === 'xy' || mode === 'yz') {
+      // For vertical planes, size against camera frustum at the configured distance.
+      const dist = this.options.distance;
+      const vFOV = THREE.MathUtils.degToRad(camera.fov);
+      baseHeight = 2 * dist * Math.tan(vFOV / 2);
+      baseWidth = baseHeight * aspect;
+    } else if (mode === 'xz') {
+      // For ground plane, lock a sensible world size based on configured distance.
+      baseWidth = this.options.distance * 2.5 * aspect;
+      baseHeight = this.options.distance * 2.5;
+    }
+
+    // Start with default-plane-XY orientation.
+    this.position.set(0, 0, 0);
+    this.rotation.set(0, 0, 0);
+    this.scale.set(baseWidth, baseHeight, 1);
+
+    switch (mode) {
+      case 'xy':
+        // Already in XY: image X -> object X, image Y -> object Y.
+        break;
+      case 'xz':
+        // Lay flat on ground: image Y becomes world -Z so the image reads
+        // top-to-front rather than mirrored.
+        this.rotation.x = -Math.PI / 2;
+        break;
+      case 'yz':
+        // Vertical plane facing ±X: image X maps to world Z, image Y maps to world Y.
+        this.rotation.y = Math.PI / 2;
+        break;
+      default:
+        break;
+    }
   }
 }
 
@@ -412,7 +491,7 @@ export class Environment extends THREE.Object3D {
     this.setBackgroundImage(config.backgroundImage);
   }
 
-  setBackgroundImage(src) {
+  setBackgroundImage(srcOrObject) {
     const hadImage = !!this.backgroundImage;
 
     // Remove old image if present
@@ -424,15 +503,33 @@ export class Environment extends THREE.Object3D {
       this.backgroundImage = null;
     }
 
-    if (src) {
-      this.backgroundImage = new BackgroundImage(src);
-      this.add(this.backgroundImage);
+    let src = srcOrObject;
+    let options = {};
+    if (srcOrObject && typeof srcOrObject === 'object' && !(srcOrObject instanceof String)) {
+      const { src: objectSrc, ...rest } = srcOrObject;
+      src = objectSrc;
+      options = rest;
     }
 
-    // Show procedural skybox only when no background image is active
-    this.skybox.visible = !this.backgroundImage;
+    if (src && typeof src === 'string') {
+      this.backgroundImage = new BackgroundImage(src, options);
+      this.add(this.backgroundImage);
 
-    // If we added an image but sun/ambient were never added, add them now
+      // Remove the procedural skybox mesh so there is nothing in front of the
+      // image to create a circular mask. Lights remain in the scene.
+      if (this.children.includes(this.skybox)) {
+        this.remove(this.skybox);
+      }
+      this.skybox.visible = false;
+    } else {
+      // No background image: restore procedural skybox sphere.
+      if (this.config.skybox !== false && !this.children.includes(this.skybox)) {
+        this.add(this.skybox);
+      }
+      this.skybox.visible = true;
+    }
+
+    // Ensure lights are present.
     if (this.backgroundImage && !this.children.includes(this.skybox.sun)) {
       this.add(this.skybox.sun);
       this.add(this.skybox.ambient);
@@ -461,11 +558,19 @@ export class Environment extends THREE.Object3D {
       this.ground.visible = config.showGround;
     }
     if (config.skybox !== undefined) {
-      const skyOn = config.skybox !== false;
+      // When a background image is active, keep the skybox sphere off the stage
+      // so it cannot mask the image. Sun/ambient stay on for lighting.
+      const skyOn = config.skybox !== false && !this.backgroundImage;
       if (this.skybox.visible !== skyOn || this.skybox.sun.visible !== skyOn || this.skybox.ambient.visible !== skyOn) {
         this.skybox.visible = skyOn;
         this.skybox.sun.visible = skyOn;
         this.skybox.ambient.visible = skyOn;
+      }
+      // Make sure the sphere is added/removed consistently with the image state.
+      if (!skyOn && this.children.includes(this.skybox)) {
+        this.remove(this.skybox);
+      } else if (skyOn && !this.children.includes(this.skybox)) {
+        this.add(this.skybox);
       }
       if (typeof config.skybox === 'object') {
         const u = this.skybox.material.uniforms;
