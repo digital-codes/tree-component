@@ -140,9 +140,9 @@ export class Tree extends THREE.Group {
    * Regenerates only the leaf skeleton and geometry, leaving branch
    * positions and all growth parameters unchanged. Useful to change leaf
    * density/count for the same tree shape.
-   * @param {number} [density=1] Leaf density multiplier between 0 and 1.
-   *   1 shows all generated leaves; lower values skip leaves in a stable
-   *   order so the canopy thins without changing individual leaf positions.
+   * @param {number} [density=1] Leaf density multiplier. 1 uses the
+   *   configured leaves.count; lower values thin the canopy and higher
+   *   values thicken it, all relative to the original preset count.
    */
   regenerateLeaves(density = 1) {
     if (!this.skeleton) {
@@ -150,13 +150,18 @@ export class Tree extends THREE.Group {
       return;
     }
 
-    this.#generateLeafSkeleton();
+    const originalCount = this.options.leaves.count;
+    const scaledCount = Math.max(1, Math.round(originalCount * density));
+    this.options.leaves.count = scaledCount;
 
-    const leafStride = density <= 0 ? Number.MAX_SAFE_INTEGER : Math.max(1, Math.round(1 / density));
-    const buffers = this.#meshSkeleton({ leafStride });
+    this.#generateLeafSkeleton();
+    this.options.leaves.count = originalCount;
+
+    const buffers = this.#meshSkeleton();
     this.branches = buffers.branches;
     this.leaves = buffers.leaves;
 
+    console.log('regenerateLeaves density:', density, 'originalCount:', originalCount, 'scaledCount:', scaledCount, 'skeletonLeaves:', this.skeleton.leaves.length, 'meshedLeaves:', this.leaves.verts.length / 4);
     this.createLeavesGeometry();
   }
 

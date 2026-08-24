@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { TreePreset } from '@dgreenheck/ez-tree';
 import EzTreeView from './components/EzTreeView.vue';
 
 const options = ref({
@@ -9,27 +10,122 @@ const options = ref({
   leaves: { type: 'oak', tint: 0x6e8c3e },
 });
 
+const leafColor = ref(0x6e8c3e);
+const leafDensity = ref(1.0);
+const selectedPreset = ref('Oak Medium');
 const stats = ref(null);
+
+function onPresetChange(name) {
+  selectedPreset.value = name;
+  console.log('preset changed:', name);
+}
+
+function onSeedChange(seed) {
+  console.log('seed changed:', seed);
+}
+
+function onLeafColorChange(color) {
+  leafColor.value = color;
+  console.log('leaf color changed:', color.toString(16));
+}
+
+function onLeafDensityChange(value) {
+  leafDensity.value = value;
+  console.log('leaf density changed:', value);
+}
+
+function hexString(hex) {
+  return '#' + Math.round(hex).toString(16).padStart(6, '0');
+}
+
+function randomizeSeed() {
+  options.value.seed = Math.floor(Math.random() * 65536);
+  console.log('randomized seed:', options.value.seed);
+}
 </script>
 
 <template>
-  <EzTreeView
-    style="width: 100vw; height: 100vh;"
-    preset="Oak Medium"
-    :options="options"
-    :grass-count="2000"
-    :show-ground="true"
-    :shadows="true"
-    :show-controls="true"
-    @generate="(s) => (stats = s)"
-  />
-  <div v-if="stats" class="stats">
-    {{ stats.vertices.toLocaleString() }} vertices / {{ stats.triangles.toLocaleString() }} triangles / {{ Math.round(stats.ms) }} ms
+  <div class="container">
+    <EzTreeView
+      class="viewer"
+      :preset="selectedPreset"
+      :options="options"
+      :leaf-color="leafColor"
+      :leaf-density="leafDensity"
+      :grass-count="2000"
+      :show-ground="true"
+      :shadows="true"
+      :show-controls="false"
+      @generate="(s) => (stats = s)"
+    />
+    <div class="controls">
+      <select :value="selectedPreset" @change="onPresetChange($event.target.value)">
+        <option value="">Custom</option>
+        <option v-for="key in Object.keys(TreePreset)" :key="key" :value="key">{{ key }}</option>
+      </select>
+      <button @click="randomizeSeed">Randomize Seed</button>
+      <label>
+        Leaf color
+        <input
+          type="color"
+          :value="hexString(leafColor)"
+          @input="onLeafColorChange(parseInt($event.target.value.slice(1), 16))"
+        />
+      </label>
+      <label>
+        Leaf density
+        <input
+          type="range"
+          min="0"
+          max="3"
+          step="0.1"
+          :value="leafDensity"
+          @input="onLeafDensityChange(Number($event.target.value))"
+        />
+        <span>{{ leafDensity.toFixed(1) }}</span>
+      </label>
+    </div>
+    <div v-if="stats" class="stats">
+      {{ stats.vertices.toLocaleString() }} vertices / {{ stats.triangles.toLocaleString() }} triangles / {{ Math.round(stats.ms) }} ms
+    </div>
   </div>
 </template>
 
 <style>
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+.container { position: relative; width: 100vw; height: 100vh; }
+.viewer { position: absolute; inset: 0; }
+.controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+}
+.controls input[type="range"] { flex: 1; }
+.controls input[type="color"] { width: 32px; height: 22px; border: none; padding: 0; }
+.controls select, .controls button {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.9);
+  color: #111;
+  cursor: pointer;
+}
 .stats {
   position: fixed;
   bottom: 10px;

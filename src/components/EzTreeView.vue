@@ -27,7 +27,6 @@ const emit = defineEmits(['generate', 'error']);
 const canvasContainer = ref(null);
 let renderer, scene, camera, controls, tree, environment, clock, rafId;
 let isReady = false;
-const leafDensity = ref(1.0);
 
 function normalizeColor(value) {
   if (value === null || value === undefined) return null;
@@ -98,20 +97,15 @@ async function setupTree() {
 
   applyTreeTextures(tree);
 
-  if (props.leafDensity !== null && props.leafDensity !== undefined) {
-    leafDensity.value = Number(props.leafDensity);
-  }
-
   if (props.autoGenerate) {
     generate();
   }
-}
 
-function setLeafDensity(value) {
-  if (!tree) return;
-  leafDensity.value = Math.max(0, Math.min(3, Number(value)));
-  applyTreeTextures(tree);
-  if (props.autoGenerate) tree.regenerateLeaves(leafDensity.value);
+  const initialDensity = props.leafDensity !== null && props.leafDensity !== undefined ? Math.max(0, Math.min(3, Number(props.leafDensity))) : 1;
+  if (initialDensity !== 1) {
+    tree.regenerateLeaves(initialDensity);
+    console.log('EzTreeView initial density applied:', initialDensity);
+  }
 }
 
 function generate() {
@@ -246,10 +240,12 @@ watch(() => props.leafColor, (value) => {
 });
 
 watch(() => props.leafDensity, (value) => {
+  console.log('EzTreeView leafDensity prop changed:', value);
   if (!tree || value === null || value === undefined) return;
-  leafDensity.value = Math.max(0, Math.min(3, Number(value)));
+  const density = Math.max(0, Math.min(3, Number(value)));
+  console.log('EzTreeView applying density:', density);
   applyTreeTextures(tree);
-  if (props.autoGenerate) tree.regenerateLeaves(leafDensity.value);
+  if (props.autoGenerate) tree.regenerateLeaves(density);
 });
 
 watch(() => props.grassCount, updateEnvironment);
@@ -264,65 +260,11 @@ watch(() => props.cameraTarget, (target) => {
   if (controls) controls.target.set(target.x, target.y, target.z);
 }, { deep: true });
 
-function handlePresetChange(name) {
-  if (TreePreset[name]) {
-    loadPresetWithTextures(tree, name, false);
-    const leafColorHex = normalizeColor(props.leafColor);
-    if (leafColorHex !== null) tree.options.leaves.tint = leafColorHex;
-    generate();
-  }
-}
-
-function randomizeSeed() {
-  tree.options.seed = Math.floor(Math.random() * 65536);
-  generate();
-}
-
-function hexString(value) {
-  const hex = normalizeColor(value) ?? tree?.options?.leaves?.tint ?? 0xffffff;
-  return '#' + hex.toString(16).padStart(6, '0');
-}
-
-function setLeafColorFromEvent(event) {
-  const hex = parseInt(event.target.value.slice(1), 16);
-  tree.options.leaves.tint = hex;
-  applyTreeTextures(tree);
-  if (props.autoGenerate) tree.regenerateLeaves();
-}
-
 defineExpose({ generate, getTree: () => tree });
 </script>
 
 <template>
-  <div ref="canvasContainer" class="ez-tree-view">
-    <div v-if="showControls" class="controls" :class="controlsPosition">
-      <select :value="preset ?? ''" @change="(e) => handlePresetChange(e.target.value)">
-        <option value="">Custom</option>
-        <option v-for="key in Object.keys(TreePreset)" :key="key" :value="key">{{ key }}</option>
-      </select>
-      <button @click="randomizeSeed">Randomize Seed</button>
-      <label class="slider-label">
-        Leaf density
-        <input
-          type="range"
-          min="0"
-          max="3"
-          step="0.1"
-          :value="leafDensity"
-          @input="setLeafDensity($event.target.value)"
-        />
-        <span>{{ leafDensity.toFixed(1) }}</span>
-      </label>
-      <label class="color-label">
-        Leaf color
-        <input
-          type="color"
-          :value="hexString(leafColor)"
-          @input="setLeafColorFromEvent"
-        />
-      </label>
-    </div>
-  </div>
+  <div ref="canvasContainer" class="ez-tree-view"></div>
 </template>
 
 <style scoped>
@@ -332,68 +274,5 @@ defineExpose({ generate, getTree: () => tree });
   height: 100%;
   overflow: hidden;
   background: #000;
-}
-
-.controls {
-  position: absolute;
-  z-index: 10;
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 6px;
-  align-items: center;
-}
-
-.controls.top-right { top: 8px; right: 8px; }
-.controls.top-left { top: 8px; left: 8px; }
-.controls.bottom-right { bottom: 8px; right: 8px; }
-.controls.bottom-left { bottom: 8px; left: 8px; }
-
-select, button {
-  font-family: system-ui, sans-serif;
-  font-size: 13px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.9);
-  color: #111;
-  cursor: pointer;
-}
-
-.color-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: system-ui, sans-serif;
-  font-size: 13px;
-  color: #fff;
-}
-
-.color-label input[type="color"] {
-  width: 32px;
-  height: 22px;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.slider-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: system-ui, sans-serif;
-  font-size: 13px;
-  color: #fff;
-  min-width: 180px;
-}
-
-.slider-label input[type="range"] {
-  flex: 1;
-}
-
-.slider-label span {
-  min-width: 44px;
-  text-align: right;
 }
 </style>
