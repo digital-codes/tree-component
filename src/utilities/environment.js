@@ -10,6 +10,10 @@ import grassModel from '../assets/models/grass.glb';
 import skyboxVert from '../assets/shaders/skybox.vert?raw';
 import skyboxFrag from '../assets/shaders/skybox.frag?raw';
 
+// clouds
+import { Clouds } from './clouds';
+
+
 // ===================== Skybox =====================
 
 export class Skybox extends THREE.Mesh {
@@ -477,6 +481,12 @@ export class Environment extends THREE.Object3D {
     this.skybox = new Skybox(config.skybox === true ? {} : (config.skybox || {}));
     this.ground = new Ground(config);
     this.grass = new Grass(config);
+
+    // clouds
+    this.clouds = new Clouds();
+    this.clouds.position.set(0, 200, 0);
+    this.clouds.rotation.x = Math.PI / 2;
+    this.add(this.clouds);
 
     // Default: procedural skybox sphere is visible. Background image, if
     // provided, replaces it but keeps the sun and ambient lights.
