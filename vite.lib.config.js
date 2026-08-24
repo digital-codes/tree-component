@@ -3,6 +3,11 @@ import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'path';
 
+import.meta.dirname
+const __dirname = new URL('.', import.meta.url).pathname;
+
+
+
 export default defineConfig({
   build: {
     outDir: 'dist',
