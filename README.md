@@ -1,3 +1,10 @@
+# Copyright notice
+
+This project is based upon @dgreenheck/ez-tree-vue which is MIT licensed.
+Current implementation was assisted by *moonshotai/Kimi-K2.7-Code* and is MIT licensed 
+as far as possible given the limitations of AI generated/modified content.
+
+
 # @dgreenheck/ez-tree-vue
 
 A Vue 3 wrapper around the procedural tree generator from `@dgreenheck/ez-tree`.
