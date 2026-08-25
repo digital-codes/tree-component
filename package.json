@@ -1,6 +1,6 @@
 {
-  "name": "@dgreenheck/ez-tree-vue",
-  "version": "3.0.0",
+  "name": "tree-component",
+  "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "files": [
