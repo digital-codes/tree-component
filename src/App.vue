@@ -4,6 +4,8 @@ import { TreePreset } from 'tree-component';
 import EzTreeView from './components/EzTreeView.vue';
 import checkerboardImage from './assets/textures/background/checkerboard.jpg';
 
+import { onMounted, onUnmounted } from 'vue';
+
 
 // tree.options.bark.type
 // need to control in branch => growth direction: strength, angle: level 1 (no 0), length: level 0 and 1, radius: level 0
@@ -35,6 +37,7 @@ const options = ref({
   leaves: { type: 'oak', tint: leaveVariants[healthOption.value].color },
 });
 
+const backendUrl = "http://localhost:8080/php";
 
 
 const leafColor = ref(leaveVariants[healthOption.value].color);
@@ -46,8 +49,11 @@ const backgroundOrientation = ref(orientations[0]);
 const stats = ref(null);
 const cameraTarget = ref({ x: 0, y: 25, z: 0 });
 // close: x=70, far: x=200
-const cameraPosition = ref({ x: 40, y: 30, z: 70 });
-const showControls = ref(true);
+
+const camDistSelection = ref(1); // 0=close, 1=far
+const camDist = [70,200];
+const cameraPosition = ref({ x: 40, y: 30, z: camDist[camDistSelection.value] });
+const showControls = ref(false);
 
 
 function onPresetChange(name) {
@@ -78,6 +84,76 @@ function randomizeSeed() {
   options.value.seed = Math.floor(Math.random() * 65536);
   console.log('randomized seed:', options.value.seed);
 }
+
+const pollTimer = ref(null);
+const pollCounter = ref(0);
+const pollDelay = 200 // milliseconds 5000; // milliseconds
+const pollScaling = 50
+
+const sendPoll = async () => {
+  if (pollCounter.value % pollScaling === 0) {
+    console.log('sending poll with seed:', options.value.seed);
+  }
+  try {
+    const response = await fetch(`${backendUrl}/poll.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seed: options.value.seed })
+    });
+    const data = await response.json();
+    if (pollCounter.value % pollScaling === 0) {
+      console.log('poll response:', data);
+    }
+    // check poll response for health and dist, and update options and cameraPosition accordingly
+    // skipp if values match current values to avoid unnecessary updates
+    
+    if (data && Object.keys(data).length > 0) {
+      // Update options based on the response
+      if (data.health !== undefined) {
+        // make sure options.branch and options.leaves are updated based on healthOption as well
+        if (data.health !== healthOption.value) {
+          healthOption.value = data.health;
+          options.value.branch = branchVariants[healthOption.value];
+          leafColor.value = leaveVariants[healthOption.value].color;
+          leafCount.value = leaveVariants[healthOption.value].count;
+          if (pollCounter.value % pollScaling === 0) {
+            console.log('updated health from poll:', data.health);
+          }
+        }
+      }
+      if (data.dist !== undefined) {
+        // make sure cameraPosition is updated based on camDistSelection as well
+        if (data.dist !== camDistSelection.value) {
+          camDistSelection.value = data.dist;
+          cameraPosition.value = { x: 40, y: 30, z: camDist[camDistSelection.value] };
+          if (pollCounter.value % pollScaling === 0) {
+            console.log('updated camera distance from poll:', data.dist, cameraPosition.value);
+          }
+        }
+      }
+      // Add more updates here if needed
+    }
+    pollCounter.value++;
+  } catch (error) {
+    console.error('poll error:', error);
+  }
+};
+
+onMounted(() => {
+  pollTimer.value = setInterval(sendPoll, pollDelay); // Poll every pollDelay milliseconds
+  onUnmounted(() => clearInterval(pollTimer.value));
+});
+
+onUnmounted(() => {
+  if (pollTimer.value) {
+    clearInterval(pollTimer.value);
+    pollTimer.value = null;
+  }
+  console.log('Component unmounted, cleanup if necessary');
+});
+
+
+
 </script>
 
 <template>

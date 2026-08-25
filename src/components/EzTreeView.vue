@@ -230,6 +230,15 @@ watch(() => props.leafCount, (value) => {
   if (props.autoGenerate) generate();
 });
 
+watch(() => props.cameraPosition, (value) => {
+  console.log('EzTreeView cameraPosition prop changed:', value);
+  if (!tree || value === null || value === undefined) return;
+  camera.position.set(value.x, value.y, value.z);
+  if (props.autoGenerate) generate();
+});
+
+
+
 watch(() => props.grassCount, updateEnvironment);
 watch(() => props.skybox, updateEnvironment);
 watch(() => props.showGround, updateEnvironment);
