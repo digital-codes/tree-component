@@ -2,7 +2,8 @@
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Tree, TreePreset, TreeOptions } from '@dgreenheck/ez-tree';
+//import { Tree, TreePreset, TreeOptions } from '@dgreenheck/ez-tree';
+import { Tree, TreePreset, TreeOptions } from '../lib/index.js';
 import { applyTreeTextures, loadPresetWithTextures } from '../utilities/textures.js';
 import { Environment } from '../utilities/environment.js';
 

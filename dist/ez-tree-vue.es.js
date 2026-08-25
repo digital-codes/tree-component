@@ -4217,7 +4217,7 @@ var Hn = class extends s.Object3D {
 			class: "ez-tree-view"
 		}, null, 512));
 	}
-}, [["__scopeId", "data-v-1cbf6cf7"]]);
+}, [["__scopeId", "data-v-359fdee7"]]);
 //#endregion
 export { Wn as EzTreeView, ht as Tree, V as TreePreset };
 

@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { TreePreset } from '@dgreenheck/ez-tree';
+import { TreePreset } from 'tree-component';
 import EzTreeView from './components/EzTreeView.vue';
 import checkerboardImage from './assets/textures/background/checkerboard.jpg';
 
