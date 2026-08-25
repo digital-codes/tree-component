@@ -4204,6 +4204,8 @@ var Hn = class extends s.Object3D {
 			t !== null && (v.options.leaves.tint = t, U(v), d.autoGenerate && C());
 		}), o(() => d.leafCount, (e) => {
 			console.log("EzTreeView leafCount prop changed:", e), !(!v || e == null) && (v.options.leaves.count = e, U(v), d.autoGenerate && C());
+		}), o(() => d.cameraPosition, (e) => {
+			console.log("EzTreeView cameraPosition prop changed:", e), !(!v || e == null) && (g.position.set(e.x, e.y, e.z), d.autoGenerate && C());
 		}), o(() => d.grassCount, w), o(() => d.skybox, w), o(() => d.showGround, w), o(() => d.backgroundImage, w), o(() => d.shadows, (e) => {
 			m && (m.shadowMap.enabled = e), w();
 		}), o(() => d.cameraTarget, (e) => {
@@ -4217,7 +4219,7 @@ var Hn = class extends s.Object3D {
 			class: "ez-tree-view"
 		}, null, 512));
 	}
-}, [["__scopeId", "data-v-359fdee7"]]);
+}, [["__scopeId", "data-v-f88c13fd"]]);
 //#endregion
 export { Wn as EzTreeView, ht as Tree, V as TreePreset };
 
