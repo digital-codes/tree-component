@@ -7,12 +7,13 @@ import checkerboardImage from './assets/textures/background/checkerboard.jpg';
 
 // tree.options.bark.type
 // need to control in branch => growth direction: strength, angle: level 1 (no 0), length: level 0 and 1, radius: level 0
+// and camera: distance, fov, position, rotation 
+// and background display image on/off
 
-
-const healthOption = ref(1)
+const healthOption = ref(2); // 0-4, 0=worst, 4=best
 
 const branchVariants = [
-  { length: { 0: 10, 1: 5 }, radius: { 0: 1. }, angle: { 1: 120.0 }, force: {strength: .001} },
+  { length: { 0: 15, 1: 15 }, radius: { 0: 1. }, angle: { 1: 120.0 }, force: {strength: .001} },
   { length: { 0: 20, 1: 15 }, radius: { 0: 2.0 }, angle: { 1: 100.0 }, force: {strength: .001} },
   { length: { 0: 30, 1: 20 }, radius: { 0: 3.0 }, angle: { 1: 80.0 }, force: {strength: .002} },
   { length: { 0: 35, 1: 25 }, radius: { 0: 3.5 }, angle: { 1: 60.0 }, force: {strength: .003} },
@@ -20,11 +21,11 @@ const branchVariants = [
 ];
 
 const leaveVariants = [
-  { count: 1, color: 0x865e3c },
-  { count: 5, color: 0xf5c211 },
-  { count: 15, color: 0x6e8c3e },
-  { count: 30, color: 0x6e8c3e },
-  { count: 40, color: 0x6e8c3e }
+  { count: 2, color: 0x865e3c },
+  { count: 3, color: 0xf5c211 },
+  { count: 8, color: 0x368269 },
+  { count: 12, color: 0x6e8c3e },
+  { count: 20, color: 0x6e8c3e }
 ];
 
 const options = ref({
@@ -40,9 +41,14 @@ const leafColor = ref(leaveVariants[healthOption.value].color);
 const leafCount = ref(leaveVariants[healthOption.value].count);
 const selectedPreset = ref('Ash Medium');
 const showBackground = ref(false);
-const backgroundOrientation = ref('camera');
 const orientations = ['camera', 'xy', 'xz', 'yz', 'equirectangular'];
+const backgroundOrientation = ref(orientations[0]);
 const stats = ref(null);
+const cameraTarget = ref({ x: 0, y: 25, z: 0 });
+// close: x=70, far: x=200
+const cameraPosition = ref({ x: 40, y: 30, z: 70 });
+const showControls = ref(true);
+
 
 function onPresetChange(name) {
   selectedPreset.value = name;
@@ -86,10 +92,12 @@ function randomizeSeed() {
       :grass-count="2000"
       :show-ground="true"
       :shadows="true"
-      :show-controls="false"
+      :show-controls="showControls"
+      :camera-target="cameraTarget"
+      :camera-position="cameraPosition"
       @generate="(s) => (stats = s)"
     />
-    <div class="controls">
+    <div class="controls" v-if="showControls">
       <select :value="selectedPreset" @change="onPresetChange($event.target.value)">
         <option value="">Custom</option>
         <option v-for="key in Object.keys(TreePreset)" :key="key" :value="key">{{ key }}</option>

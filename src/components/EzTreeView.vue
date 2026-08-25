@@ -16,8 +16,6 @@ const props = defineProps({
   shadows: { type: Boolean, default: true },
   cameraTarget: { type: Object, default: () => ({ x: 0, y: 25, z: 0 }) },
   cameraPosition: { type: Object, default: () => ({ x: 40, y: 20, z: 40 }) },
-  showControls: { type: Boolean, default: true },
-  controlsPosition: { type: String, default: 'top-right' },
   leafColor: { type: [Number, String], default: null },
   leafCount: { type: Number, default: null },
   backgroundImage: { type: [String, Boolean, Object], default: null },
@@ -54,7 +52,7 @@ function initScene() {
   scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x94b9f8, 0.0015);
 
-  camera = new THREE.PerspectiveCamera(60, 1, 0.1, 2000);
+  camera = new THREE.PerspectiveCamera(70, 1, 0.1, 2000);
   camera.position.set(props.cameraPosition.x, props.cameraPosition.y, props.cameraPosition.z);
 
   controls = new OrbitControls(camera, renderer.domElement);
