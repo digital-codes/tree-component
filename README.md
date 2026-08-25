@@ -27,7 +27,7 @@ Then install this component package locally or from your npm registry.
 ```vue
 <script setup>
 import { ref } from 'vue';
-import { EzTreeView } from '@dgreenheck/ez-tree-vue';
+import { EzTreeView } from 'tree-component';
 
 const options = ref({
   seed: 1234,
