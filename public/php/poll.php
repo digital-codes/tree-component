@@ -10,7 +10,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 $seed = $input['seed'] ?? null;
 // read json file tree_status.json from local directory. check the timestamp of the file. if the file is older than 5 seconds, return {}, else return the json object
 $file = 'tree_status.json';
-if (file_exists($file) && (time() - filemtime($file) <= 30)) {
+if (file_exists($file) && (time() - filemtime($file) <= 90)) {
     $data = json_decode(file_get_contents($file), true);
     echo json_encode($data);
 } else {
