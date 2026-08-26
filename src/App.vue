@@ -131,6 +131,20 @@ const sendPoll = async () => {
           }
         }
       }
+      if (data.bg !== undefined) {
+        // make sure showBackground is updated based on bg value
+        if (showBackground.value === false && data.bg !== "") {
+          showBackground.value = true;
+          if (pollCounter.value % pollScaling === 0) {
+            console.log('updated background from poll:', data.bg);
+          }
+        } else if (showBackground.value === true && data.bg === "") {
+          showBackground.value = false;
+          if (pollCounter.value % pollScaling === 0) {
+            console.log('updated background from poll:', data.bg);
+          }
+        }
+      }
       // Add more updates here if needed
     }
     pollCounter.value++;

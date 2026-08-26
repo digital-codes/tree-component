@@ -14,7 +14,7 @@ if (file_exists($file) && (time() - filemtime($file) <= 30)) {
     $data = json_decode(file_get_contents($file), true);
     echo json_encode($data);
 } else {
-    echo json_encode((object)["health" => 2, "dist" => 1]);
+    echo json_encode((object)["health" => 2, "dist" => 1, "bg" => ""]);
 }
 
 
