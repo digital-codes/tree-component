@@ -37,7 +37,7 @@ const options = ref({
   leaves: { type: 'oak', tint: leaveVariants[healthOption.value].color },
 });
 
-const backendUrl = "http://localhost:8080/php";
+const backendUrl = ref("http://localhost:8080/php");
 
 
 const leafColor = ref(leaveVariants[healthOption.value].color);
@@ -95,7 +95,7 @@ const sendPoll = async () => {
     console.log('sending poll with seed:', options.value.seed);
   }
   try {
-    const response = await fetch(`${backendUrl}/poll.php`, {
+    const response = await fetch(`${backendUrl.value}/poll.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ seed: options.value.seed })
@@ -154,6 +154,16 @@ const sendPoll = async () => {
 };
 
 onMounted(() => {
+  // check if we have an url parameter ?backend given. if yes, derive backendUrl from it
+  // Parse the query string (e.g., "?foo=bar&baz=qux")
+  const urlParams = new URLSearchParams(window.location.search);
+  // Get a specific parameter by key
+  const be = urlParams.get('backend');
+  console.log('be param:', be);  
+  if ((be !== undefined) && (be !== "")) {
+    backendUrl.value = backendUrl.value.replace("localhost",be)
+    console.log("New backend url ", backendUrl.value)
+  }
   pollTimer.value = setInterval(sendPoll, pollDelay); // Poll every pollDelay milliseconds
   onUnmounted(() => clearInterval(pollTimer.value));
 });
